@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import ttk 
 from datetime import timedelta, datetime
+from pymediainfo import MediaInfo
 import button_functions
 import locale
 import xml.etree.ElementTree as ET
