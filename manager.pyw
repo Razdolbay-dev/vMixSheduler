@@ -233,6 +233,19 @@ class Manager:
                         self.items_in_list.append(i.text)
 
         print('Posle: --> ',self.items_in_list)
+        for ti in self.items_in_list:
+            filename = ti
+            mi = MediaInfo.parse(ti)
+            duration_in_ms = mi.tracks[0].duration
+            try:
+                time = datetime.strftime(datetime.strptime(str(timedelta(milliseconds = int(duration_in_ms))), 
+                        "%H:%M:%S"), "%H:%M:%S")
+            except:
+                time = datetime.strftime(datetime.strptime(str(timedelta(milliseconds = int(duration_in_ms)))[:-7], 
+                        "%H:%M:%S"), "%H:%M:%S")
+            res = {'Path': filename,'Duration': time}
+            print(res)
+
         self.span = data
         #print(self.span)
         self.draw_label_frame()
