@@ -89,5 +89,5 @@ class Main:
 
 if __name__ == "__main__":
     root = Main()
-    root.run_manger()
+    #root.run_manger()
     root.run()
