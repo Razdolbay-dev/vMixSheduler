@@ -1,9 +1,10 @@
 from tkinter import *
 from tkinter import ttk 
+from button_functions import *
 from datetime import timedelta, datetime
-import button_functions
-import locale
+from pymediainfo import MediaInfo
 import xml.etree.ElementTree as ET
+import locale
 import os
 
 class Manager:
@@ -64,10 +65,6 @@ class Manager:
         self.key_entry = Entry(self.label_frame, textvariable=self.key, width=40)
         self.key_entry.grid(row=1, column=1)
 
-        self.lbl_type = Label(self.label_frame, text="ТИП: ", anchor=W).grid(row=4, column=0)
-        self.type_entry = Entry(self.label_frame, textvariable=self.type_i, width=40)
-        self.type_entry.grid(row=4, column=1)
-
         self.lbl3 = Label(self.label_frame, text="Время: ", anchor=W).grid(row=2, column=0)
         self.time_entry = Entry(self.label_frame, textvariable=self.time_input, width=40)
         self.time_entry.grid(row=2, column=1)
@@ -91,8 +88,6 @@ class Manager:
         self.key_entry.insert = (0, self.key)
         self.time_entry.insert = (0, self.time_input)
         self.start_entry.insert = (0, self.date_now_input)
-        self.type_entry.insert = (0, self.type_i)
-
 
     def draw_button_frame(self):
         self.clear_button = Button(self.btn_frame, text="Add", command=self.get_title, width=10)
@@ -132,50 +127,55 @@ class Manager:
         self.but_22 = Button(self.time_btn_frame, text="22:00", command=self.time_22, width=10).grid(row=3, column=2, padx=5, pady=5)
         self.but_23 = Button(self.time_btn_frame, text="23:00", command=self.time_23, width=10).grid(row=3, column=3, padx=5, pady=5)
 
-
-
-
     def draw_table(self):
-        self.tree.column('Title', width=150, anchor=CENTER)
+        self.tree.column('Title', width=150, anchor=W)
         self.tree.column('GUID', width=200, anchor=CENTER)
         self.tree.column('Duration', width=170, anchor=CENTER)
+        self.tree.column('Type', width=100, anchor=CENTER)
         self.tree.column('Start', width=200, anchor=CENTER)
         self.tree.column('End', width=200, anchor=CENTER)
 
         self.tree.heading('Title',text='Input')
         self.tree.heading('GUID',text='Ключ')
         self.tree.heading('Duration',text='Проболжительность')
+        self.tree.heading('Type',text='Тип')
         self.tree.heading('Start',text='Начало')
         self.tree.heading('End',text='Конец')
         
         self.tree.grid(row=0, column=0)
 
     def draw_event_info(self):
-        self.tree_info.column('Path', width=300, anchor=CENTER)
-        self.tree_info.column('Duration', width=150, anchor=CENTER)
+        self.tree_info.column('Path', width=300, anchor=W)
+        self.tree_info.column('Duration', width=100, anchor=CENTER)
         self.tree_info.heading('Path',text='Путь')
         self.tree_info.heading('Duration',text='Время')
         
         self.tree_info.grid(row=0, column=0)
 
     def insert_tree(self):
+        i_num = 0
         self.i = self.i + 1
+        i_num = i_num + 1
         text = self.title_entry.get()
         key = self.key_entry.get()
         time = self.time_entry.get()
         start = self.start_entry.get()
         # Получение окончания планировки
-        result = [start, time]
-        duration = datetime.time(datetime.strptime(result[1], "%H:%M:%S"))
+        duration = datetime.time(datetime.strptime(str(time), "%H:%M:%S"))
         # Конвертируем обратно в миллисекунды
-        req = timedelta(hours=int(duration.hour), 
-        minutes=int(duration.minute),
-        seconds=int(duration.second)+1) / timedelta(milliseconds=1)
-        x = datetime.strptime(result[0], "%Y-%m-%d %H:%M:%S")
-        y = timedelta(milliseconds = int(req))
-        end = (datetime.strptime(result[0], "%Y-%m-%d %H:%M:%S")) + (timedelta(milliseconds = int(req)))
-        #print('Начало: ',date_now_input,' - Конец: ',time_input)
-        self.tree.insert('', 'end', text=str(self.i), values=(text, key, time, start, end))
+        req = timedelta(hours=int(duration.hour), minutes=int(duration.minute), seconds=int(duration.second)+1) / timedelta(milliseconds=1)
+        end = (datetime.strptime(str(start), "%Y-%m-%d %H:%M:%S")) + (timedelta(milliseconds = int(req)))
+        item = self.tree.insert('', 'end', text="Item_"+str(self.i), values=(text, key, time, str(self.span[4]), start, end))
+        if self.span[4] == 'VideoList':
+            ziro_point = start # отправная точка , необходима для отсчета времени начало-конца видео :) 
+                               # Очень удобно и к тому же полезно
+            for x in self.items_in_list:
+                text = x['Path'] # Путь. С путем все понятно
+                time_video = datetime.time(datetime.strptime(str(x['Duration']), "%H:%M:%S"))
+                req_video = timedelta(hours=int(time_video.hour), minutes=int(time_video.minute), seconds=int(time_video.second) + 1) / timedelta(milliseconds = 1)
+                next_video = (datetime.strptime(str(ziro_point), "%Y-%m-%d %H:%M:%S")) + (timedelta(milliseconds = int(req_video)))
+                self.tree.insert(item, 'end', text=str(i_num), values=(text,'', time_video, 'Video', ziro_point, next_video))
+                ziro_point = next_video
 
     def clear_tree(self):
         for i in self.tree.get_children():
@@ -188,53 +188,57 @@ class Manager:
         print("time:", time)
         print(self.span)
         print(self.result)
-
-    def pars_items(self, key):
-
-        root = ET.parse('res/API.xml').getroot()
-        root_find = root.findall('inputs/input')
-
-        for x in root_find:
-            inp = x.get('key')
-            if inp == key:
-                y = x.find('list')
-                for i in y:
-                    self.items_in_list.append(i.text)
     
     def get_title(self):
         self.span.clear()
         value = self.title_entry.get()
         index = self.title_entry.current()
+        self.item_info_list = []
+        all_time = 0
+        for i in self.tree_info.get_children():
+            self.tree_info.delete(i)
+        i_num = 0
         for i in self.list_input:
             title = i['Title']
+            now = datetime.now() + timedelta(seconds=5)
             if value in title:
                 key = i['GUID']
                 type_i = i['Type']
-                try:
-                    time = datetime.strftime(datetime.strptime(str(timedelta(milliseconds = int(i['Time'])))[:-7], 
-                            "%H:%M:%S"), "%H:%M:%S")
-                except:
-                    time = "00:00:00"
-                now = datetime.now() + timedelta(seconds=5)
-                data = [value, key, time, str(now)[:-7], type_i]# [:-7] - нужно для удаления миллисекунд, чтоб читабельно было
-        print('DO : --> ',self.items_in_list)
-        print(type_i)
-        print(key)
-        if type_i == 'VideoList':
-            root = ET.parse('res/vmix.xml').getroot()
-            root_find = root.findall('inputs/input')
-            print(root_find)
-            for x in root_find:
-                inp = x.get('key')
-                print(inp)
-                if inp == key:
-                    y = x.find('list')
-                    for i in y:
-                        self.items_in_list.append(i.text)
-
-        print('Posle: --> ',self.items_in_list)
+                if type_i == 'VideoList':
+                    self.items_in_list.clear()
+                    root = ET.parse('res/vmix.xml').getroot()
+                    root_find = root.findall('inputs/input')
+                    for x in root_find:
+                        inp = x.get('key')
+                        if inp == key:
+                            y = x.find('list')
+                            for fn in y:
+                                mi = MediaInfo.parse(fn.text)
+                                duration_in_ms = mi.tracks[0].duration
+                                try:
+                                    time = datetime.strftime(datetime.strptime(str(timedelta(milliseconds = int(duration_in_ms))), "%H:%M:%S"), "%H:%M:%S")
+                                except:
+                                    time = datetime.strftime(datetime.strptime(str(timedelta(milliseconds = int(duration_in_ms)))[:-7], "%H:%M:%S"), "%H:%M:%S")
+                                res = {'Path': fn.text,'Duration': time}
+                                self.tree_info.insert('', 'end', text=str(i_num), values=(fn.text, time))
+                                i_num = i_num + 1
+                                all_time = int(all_time) + int(duration_in_ms)
+                                self.items_in_list.append(res)
+                    try:
+                        sum_time = datetime.strftime(datetime.strptime(str(timedelta(milliseconds = int(all_time))), 
+                                                "%H:%M:%S"), "%H:%M:%S")
+                    except:
+                        sum_time = datetime.strftime(datetime.strptime(str(timedelta(milliseconds = int(all_time)))[:-7], 
+                                "%H:%M:%S"), "%H:%M:%S")
+                    data = [value, key, sum_time, str(now)[:-7], type_i]# [:-7] - нужно для удаления миллисекунд, чтоб читабельно было
+                else:
+                    try:
+                        time = datetime.strftime(datetime.strptime(str(timedelta(milliseconds = int(i['Time'])))[:-7], 
+                                    "%H:%M:%S"), "%H:%M:%S")
+                    except:
+                        time = "00:00:00"
+                    data = [value, key, time, str(now)[:-7], type_i]# [:-7] - нужно для удаления миллисекунд, чтоб читабельно было
         self.span = data
-        #print(self.span)
         self.draw_label_frame()
         self.title_entry.current(int(index))
 
@@ -429,6 +433,7 @@ class Manager:
         self.span.insert(3, str(self.result))
         self.draw_label_frame()
         self.title_entry.current(int(index))
+        
     def grab_focus(self):
         self.root.grab_set()
         self.root.resizable(False, False)
