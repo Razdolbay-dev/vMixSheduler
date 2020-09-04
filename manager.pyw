@@ -205,6 +205,7 @@ class Manager:
                 key = i['GUID']
                 type_i = i['Type']
                 if type_i == 'VideoList':
+                    
                     self.items_in_list.clear()
                     root = ET.parse('res/vmix.xml').getroot()
                     root_find = root.findall('inputs/input')
@@ -238,6 +239,7 @@ class Manager:
                     except:
                         time = "00:00:00"
                     data = [value, key, time, str(now)[:-7], type_i]# [:-7] - нужно для удаления миллисекунд, чтоб читабельно было
+    
         self.span = data
         self.draw_label_frame()
         self.title_entry.current(int(index))
