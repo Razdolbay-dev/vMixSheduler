@@ -2,15 +2,22 @@ from manager import *
 from set_connect import *
 from tkinter import *
 from tkinter import ttk
-import xml.etree.ElementTree as xml
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime, timedelta
 from PIL import Image as PilImage
 from PIL import ImageTk
+import xml.etree.ElementTree as ET
+import time
+import os
 
 class Main:
     def __init__(self, title = "Добро пожаловать! vMixSheduler", icon=r"res/pencil.ico"):
+        
         self.root = Tk()
         self.root.title(title)
-        self.tree = ttk.Treeview(self.root, columns=('Title', 'GUID', 'Duration', 'Start', 'End'), height=15, show='headings')
+        self.i = 0
+        self.tree = ttk.Treeview(self.root, columns=('Title', 'GUID', 'Duration', 'Type', 'Start', 'End'), height=15, show='headings')
+        self.cmd()
         # Обработка иконки для кнопок
         img_pencl = PilImage.open(r"res/manager.png")
         img_pencl = img_pencl.resize((25,25), PilImage.ANTIALIAS)
@@ -30,7 +37,27 @@ class Main:
         self.root.mainloop()
     
     def cmd(self):
-        pass
+        for i in self.tree.get_children():
+            self.tree.delete(i)
+        self.i = 0
+        root = ET.parse('temp/last_shedule.xml').getroot()
+        root_find = root.findall('events/')
+        now = datetime.now()
+        for y in root_find:
+            key = y.get('guid')
+            time = y.get('duration')
+            type_i = y.get('type')
+            start = y.get('start')
+            end = y.get('end')
+            count_time = datetime.strptime(str(start), "%Y-%m-%d %H:%M:%S")
+            if now > count_time: 
+                print('Now > Start')
+            else:
+                self.tree.insert('', 'end', text="Item_"+str(self.i), values=(y.text, key, time, type_i, start, end))
+
+
+    #def cmd(self):
+    #    pass
 
     def run_manger(self):
         Manager(self.root)
@@ -46,12 +73,14 @@ class Main:
         self.tree.column('Title', width=150, anchor=CENTER)
         self.tree.column('GUID', width=200, anchor=CENTER)
         self.tree.column('Duration', width=170, anchor=CENTER)
+        self.tree.column('Type', width=100, anchor=CENTER)
         self.tree.column('Start', width=200, anchor=CENTER)
         self.tree.column('End', width=200, anchor=CENTER)
 
         self.tree.heading('Title',text='Input')
         self.tree.heading('GUID',text='Ключ')
         self.tree.heading('Duration',text='Проболжительность')
+        self.tree.heading('Type',text='Тип')
         self.tree.heading('Start',text='Начало')
         self.tree.heading('End',text='Конец')
         self.tree.pack(side=LEFT, expand="yes", fill=BOTH)
@@ -72,7 +101,7 @@ class Main:
         # Update
         upd = Button(
             toolbar, image=self.icon_clc, relief=FLAT,
-            command=self.run_manger
+            command=self.cmd
         )
         upd.image = self.icon_clc
         upd.pack(side=LEFT, padx=2, pady=2)
@@ -88,6 +117,7 @@ class Main:
         self.root.configure(menu=menubar)
 
 if __name__ == "__main__":
+    scheduler = BackgroundScheduler()
     root = Main()
     #root.run_manger()
     root.run()

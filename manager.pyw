@@ -197,20 +197,21 @@ class Manager:
         for y in list_tree_lines:
             print(y)
         
-        now = datetime.strftime(datetime.strptime(str(datetime.now())[:-7] , "%Y-%m-%d %H:%M:%S"), "%Y_%m_%d_%H%M%S")
-        filename = ''+str(now)+'.xml'
+        #now = datetime.strftime(datetime.strptime(str(datetime.now())[:-7] , "%Y-%m-%d %H:%M:%S"), "%Y_%m_%d_%H%M%S")
+        filename = 'last_shedule.xml'
         root_xml = ET.Element("root")
         appt_xml = ET.Element("events")
         root_xml.append(appt_xml)
         for i in list_tree_lines:
             # создаем дочерний суб-элемент. 
             event_input = ET.SubElement(appt_xml, "event")
-            event_input.set('title', i[0])
+            #event_input.set('title', i[0])
             event_input.set('guid', i[1])
             event_input.set('duration', i[2])
             event_input.set('type', i[3])
             event_input.set('start', i[4])
             event_input.set('end', i[5])
+            event_input.text = i[0]
         tree = ET.ElementTree(root_xml)
         tree.write("temp/"+filename+"")
             
@@ -281,9 +282,6 @@ class Manager:
         self.pars(self.list_input)
         self.get_items(self.items)
         self.draw_label_frame()
-
-    
-
 
     # выбор времени
     # надо как то вынести в другой файл
