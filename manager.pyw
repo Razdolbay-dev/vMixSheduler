@@ -58,8 +58,8 @@ class Manager:
         self.lbl1 = Label(self.label_frame, text="Имя: ", anchor=W).grid(row=0, column=0)
         self.title_entry = ttk.Combobox(self.label_frame, values=list(self.items), width=37)
         self.title_entry.current(0)
-        #self.title_entry = Entry(self.label_frame, text='self.message')
         self.title_entry.grid(row=0, column=1)
+        #self.title_entry.bind("<<ComboboxSelected>>", self.get_title)
 
         self.lbl2 = Label(self.label_frame, text="GUID: ", anchor=W).grid(row=1, column=0)
         self.key_entry = Entry(self.label_frame, textvariable=self.key, width=40)
@@ -193,9 +193,6 @@ class Manager:
         for item in self.tree.get_children():
             item_text = self.tree.item(item,"values")
             list_tree_lines.append(item_text)
-        
-        for y in list_tree_lines:
-            print(y)
         
         #now = datetime.strftime(datetime.strptime(str(datetime.now())[:-7] , "%Y-%m-%d %H:%M:%S"), "%Y_%m_%d_%H%M%S")
         filename = 'last_shedule.xml'

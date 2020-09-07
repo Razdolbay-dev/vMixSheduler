@@ -3,11 +3,17 @@ from tkinter import messagebox
 import xml.etree.ElementTree as xml
 import xml.etree.ElementTree as ET
 import requests
+import os
 class SetConnect:
     def __init__(self, parent, title = "Настройки", icon=None):
         self.root = Toplevel(parent)
         self.root.title(title)
+        
         self.span = []
+        self.list_input = []
+        self.items = []
+
+        self.get_items()
         self.pars()
         #print(self.span)
         self.label_frame = LabelFrame(self.root, text = 'This is Label Frame №1')
@@ -23,18 +29,23 @@ class SetConnect:
         self.port_vmix = StringVar(value=self.span[1])
 
         self.address_lbl = Label(self.root, text="Адресс vMix: ").grid(row=0, column=0)
-        self.address_entry = Entry(self.root, textvariable=self.address_vmix, width=20)
+        self.address_entry = Entry(self.root, textvariable=self.address_vmix, width=23)
         self.address_entry.grid(row=0, column=1)
 
         self.port_lbl = Label(self.root, text="Порт vMix: ").grid(row=1, column=0)
-        self.port_entry = Entry(self.root, textvariable=self.port_vmix, width=20)
+        self.port_entry = Entry(self.root, textvariable=self.port_vmix, width=23)
         self.port_entry.grid(row=1, column=1)
 
-        self.test_button = Button(self.root, text="Test", command=self.test_connect, width=15)
-        self.test_button.grid(row=2, column=1)
+        self.lbl1 = Label(self.root, text="Default: ", anchor=W).grid(row=2, column=0)
+        self.title_entry = ttk.Combobox(self.root, values=list(self.items))
+        self.title_entry.current(0)
+        self.title_entry.grid(row=2, column=1)
 
         self.ok_button = Button(self.root, text="Ok", command=self.createXML, width=15)
-        self.ok_button.grid(row=2, column=0)
+        self.ok_button.grid(row=3, column=0)
+
+        self.test_button = Button(self.root, text="Test", command=self.test_connect, width=15)
+        self.test_button.grid(row=3, column=1)
 
         self.address_entry.insert = (0, self.address_vmix)
         self.port_entry.insert = (0, self.port_vmix)
@@ -61,6 +72,23 @@ class SetConnect:
             print(data)
         self.span = data
 
+    def get_items(self):
+        self.list_input.clear()
+        self.items.clear()
+        #os.system('curl -o res/vmix.xml http://'+ str(self.span[0]) +':'+ str(self.span[1]) +'/API')
+        root = ET.parse('res/vmix.xml').getroot()
+        root_find = root.findall('inputs/input')
+        for x in root_find:
+            key = x.get('key')
+            inp = x.get('title')
+            data_inp = {'Title':inp, 'GUID':key}
+            self.list_input.append(data_inp)
+        print(self.list_input)
+        for y in self.list_input:
+            title = y['Title']
+            self.items.append(title)
+        
+
 
     def show_message(self):
         url = self.address_entry.get()
@@ -71,7 +99,7 @@ class SetConnect:
         url = self.address_entry.get()
         port = self.port_entry.get()
         my_file = open('res/conf.xml', 'w')
-
+        value = self.title_entry.get()
         root = xml.Element("vmix")
         #appt = xml.Element("appointment")
         appt = xml.Element("setting")
@@ -80,6 +108,11 @@ class SetConnect:
         groupby = xml.SubElement(appt, "config")
         groupby.set("url", url)  # устанавливаем аттрибут для groupby
         groupby.set("port", port)  # устанавливаем еще один аттрибут для groupby
+        for y in self.list_input:
+            title = y['Title']
+            if value in title:
+                key = y['GUID']
+                groupby.set("key", key)
         #groupby.text = 'vMix Connection'
         message = xml.tostring(root, "utf-8")  # формируем XML документ в строку message
         # Добавляем строчку кодировки для xml файла
