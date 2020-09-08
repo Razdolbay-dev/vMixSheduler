@@ -9,13 +9,12 @@ class SetConnect:
         self.root = Toplevel(parent)
         self.root.title(title)
         
-        self.span = []
+        self.span = ['127.0.0.1', '8088']
         self.list_input = []
         self.items = []
 
         self.get_items()
-        self.pars()
-        #print(self.span)
+
         self.label_frame = LabelFrame(self.root, text = 'This is Label Frame №1')
         self.label_frame.grid(row=0, column=1, sticky=N)
         if icon:
@@ -24,10 +23,9 @@ class SetConnect:
         self.grab_focus()
 
     def draw_grid(self):
-        
         self.address_vmix = StringVar(value=self.span[0])
         self.port_vmix = StringVar(value=self.span[1])
-
+        
         self.address_lbl = Label(self.root, text="Адресс vMix: ").grid(row=0, column=0)
         self.address_entry = Entry(self.root, textvariable=self.address_vmix, width=23)
         self.address_entry.grid(row=0, column=1)
@@ -75,7 +73,16 @@ class SetConnect:
     def get_items(self):
         self.list_input.clear()
         self.items.clear()
-        #os.system('curl -o res/vmix.xml http://'+ str(self.span[0]) +':'+ str(self.span[1]) +'/API')
+        try:
+            root_conf = ET.parse('res/conf.xml').getroot()
+            root_find_conf = root_conf.findall('setting/')
+            for tag in root_find_conf:
+                url = tag.get('url')
+                port = tag.get('port')
+            os.system('curl -o res/vmix.xml http://'+ str(url) +':'+ str(port) +'/API')
+        except:
+            os.system('curl -o res/vmix.xml http://127.0.0.1:8088/API')
+        
         root = ET.parse('res/vmix.xml').getroot()
         root_find = root.findall('inputs/input')
         for x in root_find:
@@ -83,12 +90,12 @@ class SetConnect:
             inp = x.get('title')
             data_inp = {'Title':inp, 'GUID':key}
             self.list_input.append(data_inp)
-        print(self.list_input)
+            print(data_inp)
         for y in self.list_input:
             title = y['Title']
             self.items.append(title)
-        
-
+            
+        print(self.items)
 
     def show_message(self):
         url = self.address_entry.get()

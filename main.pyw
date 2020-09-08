@@ -13,7 +13,6 @@ import requests
 
 class Main:
     def __init__(self, title = "Добро пожаловать! vMixSheduler", icon=r"res/pencil.ico"):
-        
         self.root = Tk()
         self.root.title(title)
         self.i = 0
@@ -36,14 +35,16 @@ class Main:
         img_tune = PilImage.open(r"res/tune.png")
         img_tune = img_tune.resize((25,25), PilImage.ANTIALIAS)
         self.icon_tun =  ImageTk.PhotoImage(img_tune)
+        
         # Кнопки в топ баре
         if icon:
             self.root.iconbitmap(icon)
         
     def run(self):
         self.draw_wigets()
+        #self.get_connect_to_vmix()
         self.cmd()
-        self.get_connect_to_vmix()
+        #print(self.guid_key)
         self.root.mainloop()
 
     def get_connect_to_vmix(self):
@@ -62,6 +63,7 @@ class Main:
             self.tree.delete(i)
         self.i = 0
         self.scheduler.resume()
+        self.get_connect_to_vmix()
         root = ET.parse('temp/last_shedule.xml').getroot()
         root_find = root.findall('events/')
         now = datetime.now()
@@ -103,29 +105,30 @@ class Main:
                 res_restart = requests.get('http://'+str(self.url)+':'+str(self.port)+'/API', params=irestart)
                 time.sleep(1)
                 self.del_to_tree()
-            else:
-                pass
         except IndexError:
             self.scheduler.pause()
 
     def push_to_shedule(self):
-        children = self.tree.get_children()[0]
-        start = self.tree.item(children)['values'][4]
-        key = self.tree.item(children)['values'][1]
-        time = self.tree.item(children)['values'][2]
-        now = datetime.strptime(str(datetime.now())[:-7], "%Y-%m-%d %H:%M:%S")
-        count_time = datetime.strptime(str(start), "%Y-%m-%d %H:%M:%S")
-        duration = datetime.time(datetime.strptime(str(time), "%H:%M:%S"))
-        req = timedelta(hours=int(duration.hour), minutes=int(duration.minute), seconds=int(duration.second)+1) / timedelta(milliseconds=1)
-        if now == count_time:
-            inp = (
-                ('Function', 'Fade'),
-                ('Duration', str(int(req))),
-                ('Input', key),
-            )
-            res_fade = requests.get('http://'+str(self.url)+':'+str(self.port)+'/API', params=inp)
-        else:
-            print(now)
+        try:
+            children = self.tree.get_children()[0]
+            start = self.tree.item(children)['values'][4]
+            key = self.tree.item(children)['values'][1]
+            time = self.tree.item(children)['values'][2]
+            now = datetime.strptime(str(datetime.now())[:-7], "%Y-%m-%d %H:%M:%S")
+            count_time = datetime.strptime(str(start), "%Y-%m-%d %H:%M:%S")
+            duration = datetime.time(datetime.strptime(str(time), "%H:%M:%S"))
+            req = timedelta(hours=int(duration.hour), minutes=int(duration.minute), seconds=int(duration.second)+1) / timedelta(milliseconds=1)
+            if now == count_time:
+                inp = (
+                    ('Function', 'Fade'),
+                    ('Duration', str(int(req))),
+                    ('Input', key),
+                )
+                res_fade = requests.get('http://'+str(self.url)+':'+str(self.port)+'/API', params=inp)
+            else:
+                print(now)
+        except IndexError:
+            self.scheduler.pause()
 
     def run_manger(self):
         Manager(self.root)

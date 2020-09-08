@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk 
+from main import *
 from button_functions import *
 from datetime import timedelta, datetime
 from pymediainfo import MediaInfo
@@ -9,7 +10,6 @@ import locale
 import os
 
 class Manager:
-    
     def __init__(self, parent, items = [], span = [], title = "Планировщик", icon=None):
         self.items = [] # Итемы в списке
         self.i = 0
@@ -194,7 +194,6 @@ class Manager:
             item_text = self.tree.item(item,"values")
             list_tree_lines.append(item_text)
         
-        #now = datetime.strftime(datetime.strptime(str(datetime.now())[:-7] , "%Y-%m-%d %H:%M:%S"), "%Y_%m_%d_%H%M%S")
         filename = 'last_shedule.xml'
         root_xml = ET.Element("root")
         appt_xml = ET.Element("events")
@@ -202,7 +201,6 @@ class Manager:
         for i in list_tree_lines:
             # создаем дочерний суб-элемент. 
             event_input = ET.SubElement(appt_xml, "event")
-            #event_input.set('title', i[0])
             event_input.set('guid', i[1])
             event_input.set('duration', i[2])
             event_input.set('type', i[3])
@@ -210,9 +208,10 @@ class Manager:
             event_input.set('end', i[5])
             event_input.text = i[0]
         tree = ET.ElementTree(root_xml)
-        tree.write("temp/"+filename+"")
-            
-    
+        tree.write("temp/"+filename+"")         
+        self.root.destroy()
+
+
     def get_title(self):
         self.span.clear()
         value = self.title_entry.get()
