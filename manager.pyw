@@ -2,7 +2,6 @@ from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk 
 from main import *
-from button_functions import *
 from datetime import timedelta, datetime
 from pymediainfo import MediaInfo
 import xml.etree.ElementTree as ET

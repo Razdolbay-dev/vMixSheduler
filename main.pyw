@@ -78,10 +78,11 @@ class Main:
             start = y.get('start')
             end = y.get('end')
             count_time = datetime.strptime(str(start), "%Y-%m-%d %H:%M:%S")
-            if now > count_time: 
-                print('Now > Start')
-            else:
+            if now < count_time: 
                 self.tree.insert('', 'end', text="Item_"+str(self.i), values=(y.text, key, time, type_i, start, end))
+            else:
+                print('Fail')
+                
                 
 
     def del_to_tree(self):
@@ -98,8 +99,7 @@ class Main:
             count_time = datetime.strptime(str(end), "%Y-%m-%d %H:%M:%S")
             if now == count_time:
                 inp = (
-                    ('Function', 'Fade'),
-                    ('Input', default),
+                    ('Function', 'Cut'),
                 )
                 irestart = (
                     ('Function', 'Restart'),
@@ -129,8 +129,6 @@ class Main:
                     ('Input', key),
                 )
                 res_fade = requests.get('http://'+str(self.url)+':'+str(self.port)+'/API', params=inp)
-            else:
-                print(now)
         except IndexError:
             self.scheduler.pause()
 
