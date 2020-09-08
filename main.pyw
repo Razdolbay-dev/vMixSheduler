@@ -48,8 +48,12 @@ class Main:
         self.root.mainloop()
 
     def get_connect_to_vmix(self):
-        root = ET.parse('res/conf.xml').getroot()
-        root_find = root.findall('setting/')
+        try:
+            root = ET.parse('res/conf.xml').getroot()
+            root_find = root.findall('setting/')
+        except:
+            root = ET.parse('res/conf_origin.xml').getroot()
+            root_find = root.findall('setting/')
         for tag in root_find:
             url = tag.get('url')
             port = tag.get('port')

@@ -82,20 +82,20 @@ class SetConnect:
             os.system('curl -o res/vmix.xml http://'+ str(url) +':'+ str(port) +'/API')
         except:
             os.system('curl -o res/vmix.xml http://127.0.0.1:8088/API')
-        
-        root = ET.parse('res/vmix.xml').getroot()
-        root_find = root.findall('inputs/input')
-        for x in root_find:
-            key = x.get('key')
-            inp = x.get('title')
-            data_inp = {'Title':inp, 'GUID':key}
-            self.list_input.append(data_inp)
-            print(data_inp)
-        for y in self.list_input:
-            title = y['Title']
-            self.items.append(title)
-            
-        print(self.items)
+        try:
+            root = ET.parse('res/vmix.xml').getroot()
+            root_find = root.findall('inputs/input')
+            for x in root_find:
+                key = x.get('key')
+                inp = x.get('title')
+                data_inp = {'Title':inp, 'GUID':key}
+                self.list_input.append(data_inp)
+                print(data_inp)
+            for y in self.list_input:
+                title = y['Title']
+                self.items.append(title)
+        except:
+            self.items = ['None']
 
     def show_message(self):
         url = self.address_entry.get()
