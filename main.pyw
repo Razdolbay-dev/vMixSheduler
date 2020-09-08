@@ -186,9 +186,6 @@ class Main:
         )
         tune.image = self.icon_tun
         tune.pack(side=LEFT, padx=2, pady=2)
-        #text
-        #self.lbl_time = Label(toolbar, textvariable=self.time_lbl, anchor=W)
-        #self.lbl_time.pack(side=LEFT, padx=2, pady=2)
         # Compil
         toolbar.pack(side=TOP, fill=X)
         self.root.configure(menu=menubar)

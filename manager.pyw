@@ -43,12 +43,10 @@ class Manager:
         self.draw_table() # Frame С таблицей
         self.draw_event_info() # Нижний фрейм с информацией по видеолисту 
         self.draw_button_frame() #Фрэйм где ADD REFRESH APPEND CLEAR
-        self.draw_push_frame() # "Запланировать""Отчистить"
         self.draw_time_btn_frame()# выбор времени
         self.grab_focus()
 
     def draw_label_frame(self):
-        #self.start = StringVar(value=self.span[0])
         self.key = StringVar(value=self.span[1])
         self.time_input = StringVar(value=self.span[2])
         self.date_now_input = StringVar(value=self.span[3])
@@ -58,7 +56,6 @@ class Manager:
         self.title_entry = ttk.Combobox(self.label_frame, values=list(self.items), width=37)
         self.title_entry.current(0)
         self.title_entry.grid(row=0, column=1)
-        #self.title_entry.bind("<<ComboboxSelected>>", self.get_title)
 
         self.lbl2 = Label(self.label_frame, text="GUID: ", anchor=W).grid(row=1, column=0)
         self.key_entry = Entry(self.label_frame, textvariable=self.key, width=40)
@@ -86,24 +83,17 @@ class Manager:
         self.start_entry.insert = (0, self.date_now_input)
 
     def draw_button_frame(self):
-        self.clear_button = Button(self.btn_frame, text="Сохранить", command=self.get_title, width=10)
-        self.clear_button.grid(row=0, column=0, padx=5, pady=5)
+        self.save_button = Button(self.btn_frame, text="Сохранить", command=self.save_to_xml, width=10)
+        self.save_button.grid(row=0, column=0, padx=5, pady=5)
 
-        self.load_button = Button(self.btn_frame, text="Обновить", command=self.refres_items, width=10)
-        self.load_button.grid(row=0, column=1, padx=5, pady=5)
+        self.refres_btn = Button(self.btn_frame, text="Обновить", command=self.refres_items, width=10)
+        self.refres_btn.grid(row=0, column=1, padx=5, pady=5)
 
-        self.clear_button = Button(self.btn_frame, text="Добавить",  width=10)# command=self.get_title, Пока не написана функция будет пустая кнопка
-        self.clear_button.grid(row=0, column=2, padx=5, pady=5)
+        self.insert_btn = Button(self.btn_frame, text="Добавить", command=self.span_print, width=10)# command=self.get_title, Пока не написана функция будет пустая кнопка
+        self.insert_btn.grid(row=0, column=2, padx=5, pady=5)
 
-        self.load_button = Button(self.btn_frame, text="Отчистить", command=self.clear_tree, width=10)
-        self.load_button.grid(row=0, column=3, padx=5, pady=5)
-    
-    def draw_push_frame(self):
-        self.clear_button = Button(self.push_frame, text="Запланировать", command=self.span_print, width=22)
-        self.clear_button.grid(row=0, column=0, padx=5, pady=5)
-
-        self.load_button = Button(self.push_frame, text="Отчистить", command=self.clear_tree, width=22)
-        self.load_button.grid(row=0, column=1, padx=5, pady=5)
+        self.clear_button = Button(self.btn_frame, text="Отчистить", command=self.clear_tree, width=10)
+        self.clear_button.grid(row=0, column=3, padx=5, pady=5)
 
     def draw_time_btn_frame(self):
         self.but_08 = Button(self.time_btn_frame, text="08:00", command=self.time_08, width=10).grid(row=0, column=0, padx=5, pady=5)
@@ -210,6 +200,26 @@ class Manager:
         tree.write("temp/"+filename+"")         
         self.root.destroy()
 
+    def save_to_xml(self):
+        list_tree_lines = []
+        for item in self.tree.get_children():
+            item_text = self.tree.item(item,"values")
+            list_tree_lines.append(item_text)
+        filename = ''+str(datetime.strptime(str(datetime.now())[:-7], "%Y-%m-%d %H:%M:%S"))+'.xml'
+        root_xml = ET.Element("root")
+        appt_xml = ET.Element("events")
+        root_xml.append(appt_xml)
+        for i in list_tree_lines:
+            # создаем дочерний суб-элемент. 
+            event_input = ET.SubElement(appt_xml, "event")
+            event_input.set('guid', i[1])
+            event_input.set('duration', i[2])
+            event_input.set('type', i[3])
+            event_input.set('start', i[4])
+            event_input.set('end', i[5])
+            event_input.text = i[0]
+        tree = ET.ElementTree(root_xml)
+        tree.write("temp/"+filename+"")         
 
     def get_title(self):
         self.span.clear()
