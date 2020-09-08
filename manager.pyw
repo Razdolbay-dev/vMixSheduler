@@ -205,7 +205,7 @@ class Manager:
         for item in self.tree.get_children():
             item_text = self.tree.item(item,"values")
             list_tree_lines.append(item_text)
-        filename = ''+str(datetime.strptime(str(datetime.now())[:-7], "%Y-%m-%d %H:%M:%S"))+'.xml'
+        filename = ''+str(datetime.strftime(datetime.strptime(str(datetime.now())[:-7], "%Y-%m-%d %H:%M:%S"), "%m-%d_%H_%M_%S")+'.xml')
         root_xml = ET.Element("root")
         appt_xml = ET.Element("events")
         root_xml.append(appt_xml)
@@ -219,7 +219,8 @@ class Manager:
             event_input.set('end', i[5])
             event_input.text = i[0]
         tree = ET.ElementTree(root_xml)
-        tree.write("temp/"+filename+"")         
+        tree.write("temp/saved/"+filename+"")
+        messagebox.showinfo("Информация: ", f"Сохранено с именем : "+filename+"")    
 
     def get_title(self):
         self.span.clear()
