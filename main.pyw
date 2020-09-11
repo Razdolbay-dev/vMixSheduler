@@ -2,7 +2,8 @@ from manager import *
 from set_connect import *
 from tkinter import *
 from tkinter import ttk
-from apscheduler.schedulers.background import BackgroundScheduler
+#from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.scheduler import Scheduler
 from datetime import datetime, timedelta
 from PIL import Image as PilImage
 from PIL import ImageTk
@@ -17,14 +18,17 @@ class Main:
         self.root.title(title)
         self.i = 0
         self.tree = ttk.Treeview(self.root, columns=('Title', 'GUID', 'Duration', 'Type', 'Start', 'End'), height=15, show='headings')
-        self.url = ''
-        self.port = ''
+        self.url = '127.0.0.1'
+        self.port = '8088'
         self.guid_key = ''
-        self.time_lbl = StringVar(value=datetime.strptime(str(datetime.now())[:-7], "%Y-%m-%d %H:%M:%S"))
-        self.scheduler = BackgroundScheduler()
-        self.scheduler.add_job(self.push_to_shedule, 'interval', seconds=1)
-        self.scheduler.add_job(self.push_to_shedule_next, 'interval', seconds=1)
-        self.scheduler.start()
+
+        self.sched = Scheduler()
+        self.sched.start()
+        self.job_start = ''
+        self.job_end = ''
+        self.job_next = ''
+        self.event_start_items = []
+        self.event_next = ''
         # Обработка иконки для кнопок
         img_pencl = PilImage.open(r"res/manager.png")
         img_pencl = img_pencl.resize((25,25), PilImage.ANTIALIAS)
@@ -42,9 +46,8 @@ class Main:
         
     def run(self):
         self.draw_wigets()
-        #self.get_connect_to_vmix()
+        self.get_connect_to_vmix()
         self.cmd()
-        #print(self.guid_key)
         self.root.mainloop()
 
     def get_connect_to_vmix(self):
@@ -66,8 +69,9 @@ class Main:
         for i in self.tree.get_children():
             self.tree.delete(i)
         self.i = 0
-        self.scheduler.resume()
+
         self.get_connect_to_vmix()
+        
         root = ET.parse('temp/last_shedule.xml').getroot()
         root_find = root.findall('events/')
         now = datetime.now()
@@ -81,56 +85,66 @@ class Main:
             if now < count_time: 
                 self.tree.insert('', 'end', text="Item_"+str(self.i), values=(y.text, key, time, type_i, start, end))
             else:
-                print('Fail')
+                pass
+        
+        messagebox.showinfo("Информация: ", f"Планировщик успешно обновлен!")
+        self.push_to_shedule()
                 
-                
-
     def del_to_tree(self):
         item = self.tree.get_children()[0]
         self.tree.delete(item)
 
-    def push_to_shedule_next(self):
-        try:
-            children = self.tree.get_children()[0]
-            end = self.tree.item(children)['values'][5]
-            key = self.tree.item(children)['values'][1]
-            now = datetime.strptime(str(datetime.now())[:-7], "%Y-%m-%d %H:%M:%S")
-            default = self.guid_key
-            count_time = datetime.strptime(str(end), "%Y-%m-%d %H:%M:%S")
-            if now == count_time:
-                inp = (
-                    ('Function', 'Cut'),
-                )
-                irestart = (
-                    ('Function', 'Restart'),
-                    ('Input', key),
-                )
-                res_fade = requests.get('http://'+str(self.url)+':'+str(self.port)+'/API', params=inp)
-                res_restart = requests.get('http://'+str(self.url)+':'+str(self.port)+'/API', params=irestart)
-                time.sleep(1)
-                self.del_to_tree()
-        except IndexError:
-            self.scheduler.pause()
-
     def push_to_shedule(self):
         try:
             children = self.tree.get_children()[0]
-            start = self.tree.item(children)['values'][4]
-            key = self.tree.item(children)['values'][1]
-            time = self.tree.item(children)['values'][2]
-            now = datetime.strptime(str(datetime.now())[:-7], "%Y-%m-%d %H:%M:%S")
-            count_time = datetime.strptime(str(start), "%Y-%m-%d %H:%M:%S")
-            duration = datetime.time(datetime.strptime(str(time), "%H:%M:%S"))
-            req = timedelta(hours=int(duration.hour), minutes=int(duration.minute), seconds=int(duration.second)+1) / timedelta(milliseconds=1)
-            if now == count_time:
-                inp = (
-                    ('Function', 'Fade'),
-                    ('Duration', str(int(req))),
-                    ('Input', key),
-                )
-                res_fade = requests.get('http://'+str(self.url)+':'+str(self.port)+'/API', params=inp)
+
+            self.event_start_items = [str(self.tree.item(children)['values'][1]), str(self.tree.item(children)['values'][2]), str(self.tree.item(children)['values'][4]), str(self.tree.item(children)['values'][5])]
+            
+            try:
+                self.event_next = str(self.tree.item(self.tree.get_children()[1])['values'][4])
+            except:
+                self.event_next = str(self.tree.item(children)['values'][5])
+            # Определяем время задачи
+            time_start = datetime.strptime(str(self.event_start_items[2]) , "%Y-%m-%d %H:%M:%S")
+            time_end = datetime.strptime(str(self.event_start_items[3]) , "%Y-%m-%d %H:%M:%S")
+            time_next = datetime.strptime(str(self.event_next) , "%Y-%m-%d %H:%M:%S") - timedelta(seconds=10)
+
+            self.job_start = self.sched.add_date_job(self.start_shade, time_start)
+            self.job_end = self.sched.add_date_job(self.end_shade, time_end)
+            self.job_next = self.sched.add_date_job(self.next_shade, time_next)
         except IndexError:
-            self.scheduler.pause()
+            messagebox.showinfo("Информация: ", f"Задачи как бы все!=) Ну или просто пусто")
+
+    def start_shade(self):
+        key = self.event_start_items[0]
+        duration = datetime.time(datetime.strptime(str(self.event_start_items[1]), "%H:%M:%S"))
+        req = timedelta(hours=int(duration.hour), minutes=int(duration.minute), seconds=int(duration.second)+1) / timedelta(milliseconds=1)
+        inp = (
+            ('Function', 'Fade'),
+            ('Duration', str(int(req))),
+            ('Input', key),
+        )
+        res_fade = requests.get('http://'+str(self.url)+':'+str(self.port)+'/API', params=inp)
+    
+    def end_shade(self):
+        key = self.event_start_items[0]
+        inp = (
+            ('Function', 'Cut'),
+        )
+        irestart = (
+            ('Function', 'Restart'),
+            ('Input', key),
+        )
+        res_fade = requests.get('http://'+str(self.url)+':'+str(self.port)+'/API', params=inp)
+        res_restart = requests.get('http://'+str(self.url)+':'+str(self.port)+'/API', params=irestart)
+    
+    def next_shade(self):
+        self.del_to_tree()
+        try:
+            time.sleep(1)
+            self.push_to_shedule()
+        except:
+            messagebox.showinfo("Информация: ", f"Задачи как бы все!=) Ну или просто пусто")
 
     def run_manger(self):
         Manager(self.root)
